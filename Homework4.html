@@ -92,9 +92,18 @@ img {
 </div>
 <div id="problems" class="section level2">
 <h2>Problems</h2>
-<div id="problem-1." class="section level3">
-<h3>Problem 1.</h3>
+<div id="problem-1" class="section level3">
+<h3>Problem 1</h3>
 <p>Imagine that you’ve been urged by the teachers’ union to show that higher teacher pay leads to better education outcomes. Of course, you don’t do advocacy research — you are a seeker of truth — but you decide to investigate this questions scientifically using data about SAT scores and other educational indicators at the state level. For now we can pretend that this is the only available data (it comes from John Fox’s website). <a href="http://socserv.socsci.mcmaster.ca/jfox/Books/Applied-Regression-2E/datasets/States.pdf">Read the data documentation</a> and use the code below to load it</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(dplyr)
+<span class="kw">setwd</span>(<span class="st">&quot;/Users/TScott/Google Drive/Webpage/teaching/PADP8120_Fall2015/Homeworks&quot;</span>)
+educ &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="st">&quot;input/States.txt&quot;</span>, <span class="dt">header=</span><span class="ot">TRUE</span>)
+<span class="co"># now clean up a bit</span>
+educ &lt;-<span class="st"> </span>educ %&gt;%<span class="st"> </span><span class="kw">rename</span>(<span class="dt">sat.verbal =</span> satVerbal, <span class="dt">sat.math =</span> satMath, <span class="dt">percent.taking =</span> percentTaking, <span class="dt">percent.no.hs =</span> percentNoHS, <span class="dt">teacher.pay =</span> teacherPay) 
+<span class="co"># not good to have state as a rowname</span>
+educ$state &lt;-<span class="st"> </span><span class="kw">rownames</span>(educ)
+<span class="kw">rownames</span>(educ) &lt;-<span class="st"> </span><span class="ot">NULL</span>
+educ &lt;-<span class="st"> </span><span class="kw">tbl_df</span>(educ)</code></pre>
 <ol style="list-style-type: example">
 <li><p>Make a scatter plot showing the relationship between average teacher pay and average sat score (combined verbal and math) at the state level. To do this you might have to create a new variable. And, overlay a regression line on the plot.</p></li>
 <li><p>Fit a simple regression model to predict total SAT score based on teacher pay.</p></li>
@@ -122,8 +131,8 @@ img {
 <li><p>Provide an interpretation (using sentences as you might in an academic journal) of your coefficient results.</p></li>
 </ol>
 </div>
-<div id="problem-3." class="section level3">
-<h3>Problem 3.</h3>
+<div id="problem-3" class="section level3">
+<h3>Problem 3</h3>
 <p>Examine Angell’s data on the moral integration of U.S. cities (Angells is a data file in the car library).</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(car)
 <span class="kw">data</span>(<span class="st">&quot;Angell&quot;</span>)</code></pre>

@@ -642,8 +642,8 @@ print.df$p.val =<span class="st"> </span><span class="kw">round</span>(<span cla
 
 <span class="kw">tyler.lm</span>(<span class="dt">y=</span>y,<span class="dt">x=</span>x)</code></pre>
 <pre><code>##             coef    SE  t.obs p.val
-## Intercept -0.060 0.080 -0.750 0.455
-## X          0.334 0.101  3.307 0.001</code></pre>
+## Intercept  0.123 0.119  1.034 0.304
+## X         -0.054 0.101 -0.535 0.594</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">lm</span>(y~x))</code></pre>
 <pre><code>## 
 ## Call:
@@ -651,18 +651,16 @@ print.df$p.val =<span class="st"> </span><span class="kw">round</span>(<span cla
 ## 
 ## Residuals:
 ##      Min       1Q   Median       3Q      Max 
-## -2.48936 -0.52004  0.04131  0.70787  1.76217 
+## -2.15630 -0.74553 -0.00896  0.64876  2.61919 
 ## 
 ## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)   
-## (Intercept) -0.05980    0.09683  -0.618  0.53829   
-## x            0.33403    0.10880   3.070  0.00277 **
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##             Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)  0.12307    0.09942   1.238    0.219
+## x           -0.05365    0.09144  -0.587    0.559
 ## 
-## Residual standard error: 0.9679 on 98 degrees of freedom
-## Multiple R-squared:  0.08774,    Adjusted R-squared:  0.07843 
-## F-statistic: 9.425 on 1 and 98 DF,  p-value: 0.002769</code></pre>
+## Residual standard error: 0.9906 on 98 degrees of freedom
+## Multiple R-squared:  0.003501,   Adjusted R-squared:  -0.006668 
+## F-statistic: 0.3443 on 1 and 98 DF,  p-value: 0.5587</code></pre>
 </div>
 <div id="report-your-process" class="section level3">
 <h3>Report your process</h3>

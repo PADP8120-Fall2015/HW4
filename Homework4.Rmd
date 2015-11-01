@@ -31,7 +31,7 @@ Topics covered in this homework include:
 
 Imagine that you've been urged by the teachers' union to show that higher teacher pay leads to better education outcomes.  Of course, you don't do advocacy research --- you are a seeker of truth --- but you decide to investigate this questions scientifically using data about SAT scores and other educational indicators at the state level.  For now we can pretend that this is the only available data (it comes from John Fox's website). [Read the data documentation](http://socserv.socsci.mcmaster.ca/jfox/Books/Applied-Regression-2E/datasets/States.pdf) and use the code below to load it
 
-```{r echo=FALSE,message=FALSE,warnings=FALSE}
+```{r echo=TRUE,message=FALSE,warnings=FALSE}
 library(dplyr)
 setwd("/Users/TScott/Google Drive/Webpage/teaching/PADP8120_Fall2015/Homeworks")
 educ <- read.table("input/States.txt", header=TRUE)
