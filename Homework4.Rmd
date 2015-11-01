@@ -27,7 +27,7 @@ Topics covered in this homework include:
 
 ## Problems
 
-### Problem 1. 
+### Problem 1 
 
 Imagine that you've been urged by the teachers' union to show that higher teacher pay leads to better education outcomes.  Of course, you don't do advocacy research --- you are a seeker of truth --- but you decide to investigate this questions scientifically using data about SAT scores and other educational indicators at the state level.  For now we can pretend that this is the only available data (it comes from John Fox's website). [Read the data documentation](http://socserv.socsci.mcmaster.ca/jfox/Books/Applied-Regression-2E/datasets/States.pdf) and use the code below to load it
 
@@ -85,7 +85,7 @@ You don't necessarily believe these results, and think there might be more to th
 (@) Provide an interpretation (using sentences as you might in an academic journal) of your coefficient results.
 
 
-### Problem 3.
+### Problem 3
 
 Examine Angell’s data on the moral integration of U.S. cities (Angells is a data file in the car library). 
 
@@ -100,7 +100,7 @@ data("Angell")
 
 ### Bonus 
  
-Write a function that emulates the `lm` function in R for a simple (bivariate) regression. Like the `lm` function, your function should be able to estimate and report to the screen `B_k` coefficients, standard errors for these coefficients, and corresponding t-values and p-values. It should also report the residual standard error and $R^2$. Be sure to show your code. Compare your results to the results of the `lm` function on some data of your choosing to verify that things are working correctly. 
+Write a function that emulates the `lm` function in R for a simple (bivariate) regression. Like the `lm` function, your function should be able to estimate and report to the screen `B_k` coefficients, standard errors for these coefficients, and corresponding t-values and p-values. It should also report the residual standard error and $R^2$. Be sure to show your code. Compare your results to the results of the `lm` function on some data of your choosing to verify that things are working correctly.
 
 ### Report your process
 

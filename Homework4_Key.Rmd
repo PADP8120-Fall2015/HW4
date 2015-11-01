@@ -27,44 +27,8 @@ Topics covered in this homework include:
 
 ## Problems
 
-### Problem 1
 
-Write a function that emulates the `lm` function in R for a simple (bivariate) regression. Like the `lm` function, your function should be able to estimate and report to the screen `B_k` coefficients, standard errors for these coefficients, and corresponding t-values and p-values. It should also report the residual standard error and $R^2$. Be sure to show your code. Compare your results to the results of the `lm` function on some data of your choosing to verify that things are working correctly.
-
-```{r}
-x = rnorm(100)
-y = rnorm(100)
-
-tyler.lm = function(y,x)
-{  
-#note: round to 5 digits to match lm functionality
-#compute b1
-  b1 = round({sum(x * y) - (1/length(y)) * sum(x) * sum(y)} /
-{sum(x^2) - (1/length(y)) * sum(x)^2},5)
-#compute b0
-b0 = round(mean(y) - b1 * mean(x),5)
-#compute SE for regression
-ser = sqrt(sum({(y - (b0 + b1*x))^2})/ (length(y)-2))
-#compute SE for b1
-SEb1 = ser / sqrt(sum({(y - (b0 + b1*x))^2}))
-#compute SE for b0
-SEb0 = (ser * (1/length(y)) * sum(x^2)) /
-sqrt(sum({(y - (b0 + b1*x))^2}))
-#make df to store output
-print.df = data.frame(coef = round(c(b0,b1),3),SE = round(c(SEb0,SEb1),3))
-#calculated t.observed
-print.df$t.obs = round(print.df$coef/print.df$SE,3)
-#calculate p-values
-print.df$p.val = round(2*pt(abs(print.df$t.obs),df=length(x)-2,lower.tail=FALSE),3)
-rownames(print.df) = c('Intercept','X')
-return(print.df)
-}
-
-tyler.lm(y=y,x=x)
-summary(lm(y~x))
-```
-
-### Problem 2 
+### Problem 1 
 
 Imagine that you've been urged by the teachers' union to show that higher teacher pay leads to better education outcomes.  Of course, you don't do advocacy research --- you are a seeker of truth --- but you decide to investigate this questions scientifically using data about SAT scores and other educational indicators at the state level.  For now we can pretend that this is the only available data (it comes from John Fox's website). [Read the data documentation](http://socserv.socsci.mcmaster.ca/jfox/Books/Applied-Regression-2E/datasets/States.pdf) and use the code below to load it
 
@@ -155,7 +119,7 @@ summary(mod)
 Based upon the model results, our results predict that each additional $1k in teacher pay predicts a -4.8 point decrease in average combined SAT score. 
 
 
-### Problem 3
+### Problem 2
 
 You don't necessarily believe these results, and think there might be more to the story. Thus, you decide to carry on to a multiple regression analysis using more variables.
 
@@ -268,7 +232,7 @@ The association between the percentage of students in each state who take the SA
 
 
 
-### Problem 4
+### Problem 3
 
 Examine Angell’s data on the moral integration of U.S. cities (Angells is a data file in the car library). 
 
@@ -300,6 +264,45 @@ avPlots(mod1)
 plot(mod1$residuals~mod1$fitted.values)
 ```
 
+
+
+### Bonus 
+ 
+Write a function that emulates the `lm` function in R for a simple (bivariate) regression. Like the `lm` function, your function should be able to estimate and report to the screen `B_k` coefficients, standard errors for these coefficients, and corresponding t-values and p-values. It should also report the residual standard error and $R^2$. Be sure to show your code. Compare your results to the results of the `lm` function on some data of your choosing to verify that things are working correctly.
+
+
+```{r}
+x = rnorm(100)
+y = rnorm(100)
+
+tyler.lm = function(y,x)
+{  
+#note: round to 5 digits to match lm functionality
+#compute b1
+  b1 = round({sum(x * y) - (1/length(y)) * sum(x) * sum(y)} /
+{sum(x^2) - (1/length(y)) * sum(x)^2},5)
+#compute b0
+b0 = round(mean(y) - b1 * mean(x),5)
+#compute SE for regression
+ser = sqrt(sum({(y - (b0 + b1*x))^2})/ (length(y)-2))
+#compute SE for b1
+SEb1 = ser / sqrt(sum({(y - (b0 + b1*x))^2}))
+#compute SE for b0
+SEb0 = (ser * (1/length(y)) * sum(x^2)) /
+sqrt(sum({(y - (b0 + b1*x))^2}))
+#make df to store output
+print.df = data.frame(coef = round(c(b0,b1),3),SE = round(c(SEb0,SEb1),3))
+#calculated t.observed
+print.df$t.obs = round(print.df$coef/print.df$SE,3)
+#calculate p-values
+print.df$p.val = round(2*pt(abs(print.df$t.obs),df=length(x)-2,lower.tail=FALSE),3)
+rownames(print.df) = c('Intercept','X')
+return(print.df)
+}
+
+tyler.lm(y=y,x=x)
+summary(lm(y~x))
+```
 
 ### Report your process
 
