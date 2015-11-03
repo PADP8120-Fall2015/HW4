@@ -142,6 +142,7 @@ You don't necessarily believe these results, and think there might be more to th
 library(knitr); library(dplyr)
 kable(round(cor(educ %>% select(-state,-region)),3))
 ```
+*Looking at the pairwise correlations amongst the variables, it appears that the my most promising variabke to include in my model would be regress percent.taking and teacher.pay on sat.both.*
 
 (@) Identify the optimal model(s) using all possible subsets and AIC/BIC.
 ```{r}
@@ -160,17 +161,55 @@ model.list = list(m1 = lm(sat.both~population + percent.taking, data = educ.subs
 
 model.comps = data.frame(AIC = unlist(lapply(model.list,AIC)),BIC = unlist(lapply(model.list,BIC)),df = unlist(lapply(lapply(model.list,coef),length))-1)
 model.comps
-                  
-```                  
+```        
+*My hunch was partly wrong; the best performing model is m4 with the variables percent.taking and percent.no.hs.  m4's AIC and BIC scores are the lowest and it is parsimonious; it appears to be the best choice from the options available.*    
+
 (@) Identify the optimal model(s) using backward elimination and AIC/BIC.
+```{r}
+summary(lm.unrestricted <- lm(sat.both~., data = educ.subset))
+
+#REMEMBER: AIC = 2k -2ln(L); k=2
+backAIC <- step(lm.unrestricted,direction = 'backward', k = 2)
+
+#REMEMBER: BIC = -2 * loglikelihood + d * log(N) 
+
+#where N is the sample size of the training set and d is the total number of parameters. The lower BIC score signals a better model. From http://stanfordphd.com/BIC.html 
+backBIC <- step(lm.unrestricted,direction = 'backward',k = log(nrow(educ.subset)))
+```
+*Backward elimination and AIC/BIC all indicate that the best/optimal model includes percent.taking and percent.no.hs (the m4 model).* 
 
 (@) Identify the optimal model(s) using forward selection and AIC/BIC.
+```{r}
+summary(lm.unrestricted <- lm(sat.both~., data = educ.subset))
+
+summary(lm.restricted <- lm(sat.both ~1, data = educ.subset))
+
+#Forward AIC...
+step(lm.restricted, scope=list(lower=lm.restricted, upper=lm.unrestricted), direction="forward", k = 2)
+
+# Forward BIC
+step(lm.restricted, scope=list(lower=lm.restricted, upper=lm.unrestricted), direction="forward", k = log(nrow(educ.subset)))
+
+```
 
 (@) Do the methods agree on the optimal model?  If not, why not?
+*It appears that forward selection using the AIC/BIC also reveal that the optimal model is still m4 with the variables percent.taking and percent.no.hs regressed on sat.both.*
+$E(sat.both|X_1,X_2)$ = $\beta_0$ + $\widehat{\beta}_percent.taking* x_1$  + $\widehat{\beta}_percent.no.hs* x_2$ 
 
 (@) Assess whether your model is doing a good job of modeling the response (hint: think $Y$ vs. $\hat{Y}$  plot).
+```{r}
+best.model = lm(sat.both ~ percent.taking + percent.no.hs, data = educ.subset)
+plot(best.model$fitted.values ~ educ.subset$sat.both,ylim=c(800,1300), xlim=c(800,1300))
+```
+*It appears to have a discernible positive linear relationship, but I detect a slight curvilinear trend between the outcome, sat.both, and these explanatory variables (percent.taking + percent.no.hs) included in the model.*
 
 (@) Assess the relationship between each each predictor and the response (hint: marginal model plots). Is your model well-specified?
+```{r}
+install.packages("car", repos="http://R-Forge.R-project.org")
+library(car)
+mmp(best.model, educ.subset$percent.taking)
+```
+*Our best model fits percent.taking as a linear variable.  It appears that our "best"" model is not well-specified considering the percent.taking variable; a curvilinear relationship exists between this variable and sat.both.*
 
 (@) Assess how much a given predictor $x_i$ can explain the response after the other predictors have been taken into account.
 
