@@ -76,7 +76,7 @@ rownames(educ) <- NULL
 educ <- tbl_df(educ)
 ```
 
-(@) Make a scatter plot showing the relationship between average teacher pay and average sat score at the state level.  To do this you might have to create a new variable.  And, overlay a regression line on the plot.
+(@) Make a scatter plot showing the relationship between average teacher pay and average SAT score at the state level.  To do this you might have to create a new variable.  And, overlay a regression line on the plot.
 ```{r}
 library(ggplot2)
 library(ggthemes)
@@ -92,26 +92,76 @@ model = lm(sat.both~teacher.pay,data = educ)
 summary(model)
 ```
 (@) Check whether the conditional mean of Y|X is a linear function of X.
+*It is a reasonable assumption that Y is a linear funcion of X.  I don't see any obvious curvilinear trends in the scatterplot of the observations from the data.*
 
-(@) Check whether the variance of Y|X is the same for any X.
+(@) Check whether the variance of Y|X is the same for any X. (Check for homo- or heteroskedasticity)  To check for heteroskedasticity, we need to plot residuals against predicted values (i.e., y-hats):
+```{r}
+plot(model$residuals~predict(model))
+```
+*It looks like the residuals are more evenly distributed the higher the combined score.  There is a distinct abscence of residuals towrads the lower score values.*
 
-(@) Check whether the errors (and thus the Y|X) are independent of one another).
+(@) Check whether the errors (and thus the Y|X) are independent of one another. (Are the errors iid?)  To check this assumption, we need to plot residuals against the regressor. It’s probably a good idea to use standardized residuals.
+```{r}
+plot(rstandard(model)~educ$teacher.pay, ylim = c(-2.5,2.5))
+abline(h=0)
+```
+*This looks like a flipped version of the plot to check for heteroskedasticity.  The "hole" we saw in the earlier plot is here but on the higher end of teacher pay.  I wonder if there is a relationship?*
 
-(@) Check whether the errors are normally distributed with mean zero.
+(@) Check whether the errors are normally distributed with mean zero. (Hint: histogram)
+```{r}
+hist(model$residuals)
+```
+*It looks nearly normal/normal enough.*
 
 (@) Identify any outliers and quantify their influence and leverage. 
+```{r}
+plot(rstandard(model)~educ$teacher.pay,ylim = c(-2.5,2.5))
+abline(h=0)
+abline(h=2,lty=2)
+abline(h=-2,lty=2)
+#This places a dashed line at 2 and at -2
+```
+*Based on these standardized residuals, there doesn't appear to be any high iinfluence or high leverage outliers such that they pull at the line.  There is only one residual that is below the 2nd sd; this would be a normal occurance in a dataset of 51 observations(we could possibly expect at least 2).*
+```{r}
+summary(round(cooks.distance(model),2))
+```
+*Cook's Distance doesn't reveal any high leverage values either.*
 
 (@) Explain the substantive conclusion that you would draw from the scatter plot and regression analysis. Be sure to interpret the coefficient in a complete sentence. 
-
+```{r}
+summary(model)
+```
+*This model predicts a decline of 4.8 points on a combined SAT score for every $1,000 increase in teacher pay.*
 
 ### Problem 3.
 
 You don't necessarily believe these results, and think there might be more to the story. Thus, you decide to carry on to a multiple regression analysis using more variables.
 
 (@) Using a figure or table, examine the pairwise correlations amongst potential model variables (go ahead and exclude the categorical indicators `state` and `region`. Comment on these results and how they will affect your model fitting. 
+```{r}
+library(knitr); library(dplyr)
+kable(round(cor(educ %>% select(-state,-region)),3))
+```
 
 (@) Identify the optimal model(s) using all possible subsets and AIC/BIC.
+```{r}
+educ.subset = educ %>% dplyr::select(-state,-region,-sat.math,-sat.verbal)
+model.list = list(m1 = lm(sat.both~population + percent.taking, data = educ.subset),
+                  m2 = lm(sat.both~population + percent.no.hs, data = educ.subset),
+                  m3 = lm(sat.both~population + teacher.pay, data = educ.subset),
+                  m4 = lm(sat.both~percent.taking + percent.no.hs, data = educ.subset),
+                  m5 = lm(sat.both~percent.taking + teacher.pay, data = educ.subset), 
+                  m6 = lm(sat.both~percent.no.hs + teacher.pay, data = educ.subset),
+                  m7 = lm(sat.both~population + percent.taking + percent.no.hs, data = educ.subset),
+                  m8 = lm(sat.both~population + percent.taking + teacher.pay, data = educ.subset),
+                  m9 = lm(sat.both~population + percent.no.hs + teacher.pay, data = educ.subset),
+                  m10 = lm(sat.both~percent.taking + percent.no.hs + teacher.pay, data = educ.subset),
+                  m11 = lm(sat.both~population + percent.taking + percent.no.hs + teacher.pay, data = educ.subset))
 
+model.comps = data.frame(AIC = unlist(lapply(model.list,AIC)),BIC = unlist(lapply(model.list,BIC)),df = unlist(lapply(lapply(model.list,coef),length))-1)
+model.comps
+                  
+```                  
 (@) Identify the optimal model(s) using backward elimination and AIC/BIC.
 
 (@) Identify the optimal model(s) using forward selection and AIC/BIC.
