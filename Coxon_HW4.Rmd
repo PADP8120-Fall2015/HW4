@@ -33,9 +33,14 @@ Write a function that emulates the `lm` function in R for a simple (bivariate) r
 
 ###### Formulas
 $E(Y|x)$ = $\beta_0 + \beta_1$*x_i    
+
 $\beta_1$ = $\sum_{i=1}^n$ $(x_i - \bar{x})$*$(y_i - \bar{y})$ / $(x_i - \bar{x})^2$
 $\beta_0$ = $\bar{y}$ - $\beta_1$*$x_i$
-Best estimate of $\sigma^2$ is $s^2$ = $\sum_{i=1}^n$ $(y_i - \bar{y})^2$ / $n-2$
+
+Best estimate of $\sigma^2$ is 
+$s^2$ = $\sum_{i=1}^n$ $(y_i - \bar{y})^2$ / $n-2$
+
+From : http://www.stat.cmu.edu/~hseltman/309/Book/chapter9.pdf
 
 ```{r}
 x = rnorm(100)
@@ -92,25 +97,29 @@ model = lm(sat.both~teacher.pay,data = educ)
 summary(model)
 ```
 (@) Check whether the conditional mean of Y|X is a linear function of X.
+
 *It is a reasonable assumption that Y is a linear funcion of X.  I don't see any obvious curvilinear trends in the scatterplot of the observations from the data.*
 
 (@) Check whether the variance of Y|X is the same for any X. (Check for homo- or heteroskedasticity)  To check for heteroskedasticity, we need to plot residuals against predicted values (i.e., y-hats):
 ```{r}
 plot(model$residuals~predict(model))
 ```
-*It looks like the residuals are more evenly distributed the higher the combined score.  There is a distinct abscence of residuals towrads the lower score values.*
+
+*It looks like the residuals are more evenly distributed the higher the combined score.  There is a distinct abscence of residuals towards the lower score values.*
 
 (@) Check whether the errors (and thus the Y|X) are independent of one another. (Are the errors iid?)  To check this assumption, we need to plot residuals against the regressor. It’s probably a good idea to use standardized residuals.
 ```{r}
 plot(rstandard(model)~educ$teacher.pay, ylim = c(-2.5,2.5))
 abline(h=0)
 ```
+
 *This looks like a flipped version of the plot to check for heteroskedasticity.  The "hole" we saw in the earlier plot is here but on the higher end of teacher pay.  I wonder if there is a relationship?*
 
 (@) Check whether the errors are normally distributed with mean zero. (Hint: histogram)
 ```{r}
 hist(model$residuals)
 ```
+
 *It looks nearly normal/normal enough.*
 
 (@) Identify any outliers and quantify their influence and leverage. 
@@ -121,16 +130,20 @@ abline(h=2,lty=2)
 abline(h=-2,lty=2)
 #This places a dashed line at 2 and at -2
 ```
-*Based on these standardized residuals, there doesn't appear to be any high iinfluence or high leverage outliers such that they pull at the line.  There is only one residual that is below the 2nd sd; this would be a normal occurance in a dataset of 51 observations(we could possibly expect at least 2).*
+
+*Based on these standardized residuals, there doesn't appear to be any high influence or high leverage outliers such that they pull at the line.  There is only one residual that is below the -2nd sd; this would be a normal occurance in a dataset of 51 observations(we could possibly expect at least 2).*
+
 ```{r}
 summary(round(cooks.distance(model),2))
 ```
+
 *Cook's Distance doesn't reveal any high leverage values either.*
 
 (@) Explain the substantive conclusion that you would draw from the scatter plot and regression analysis. Be sure to interpret the coefficient in a complete sentence. 
 ```{r}
 summary(model)
 ```
+
 *This model predicts a decline of 4.8 points on a combined SAT score for every $1,000 increase in teacher pay.*
 
 ### Problem 3.
@@ -138,11 +151,13 @@ summary(model)
 You don't necessarily believe these results, and think there might be more to the story. Thus, you decide to carry on to a multiple regression analysis using more variables.
 
 (@) Using a figure or table, examine the pairwise correlations amongst potential model variables (go ahead and exclude the categorical indicators `state` and `region`. Comment on these results and how they will affect your model fitting. 
+
 ```{r}
 library(knitr); library(dplyr)
 kable(round(cor(educ %>% select(-state,-region)),3))
 ```
-*Looking at the pairwise correlations amongst the variables, it appears that the my most promising variabke to include in my model would be regress percent.taking and teacher.pay on sat.both.*
+
+*Looking at the pairwise correlations amongst the variables, it appears that the most promising variables to include in my model would be to regress sat.both on percent.taking and teacher.pay.*
 
 (@) Identify the optimal model(s) using all possible subsets and AIC/BIC.
 ```{r}
@@ -162,6 +177,7 @@ model.list = list(m1 = lm(sat.both~population + percent.taking, data = educ.subs
 model.comps = data.frame(AIC = unlist(lapply(model.list,AIC)),BIC = unlist(lapply(model.list,BIC)),df = unlist(lapply(lapply(model.list,coef),length))-1)
 model.comps
 ```        
+
 *My hunch was partly wrong; the best performing model is m4 with the variables percent.taking and percent.no.hs.  m4's AIC and BIC scores are the lowest and it is parsimonious; it appears to be the best choice from the options available.*    
 
 (@) Identify the optimal model(s) using backward elimination and AIC/BIC.
@@ -176,6 +192,7 @@ backAIC <- step(lm.unrestricted,direction = 'backward', k = 2)
 #where N is the sample size of the training set and d is the total number of parameters. The lower BIC score signals a better model. From http://stanfordphd.com/BIC.html 
 backBIC <- step(lm.unrestricted,direction = 'backward',k = log(nrow(educ.subset)))
 ```
+
 *Backward elimination and AIC/BIC all indicate that the best/optimal model includes percent.taking and percent.no.hs (the m4 model).* 
 
 (@) Identify the optimal model(s) using forward selection and AIC/BIC.
@@ -193,30 +210,57 @@ step(lm.restricted, scope=list(lower=lm.restricted, upper=lm.unrestricted), dire
 ```
 
 (@) Do the methods agree on the optimal model?  If not, why not?
-*It appears that forward selection using the AIC/BIC also reveal that the optimal model is still m4 with the variables percent.taking and percent.no.hs regressed on sat.both.*
-$E(sat.both|X_1,X_2)$ = $\beta_0$ + $\widehat{\beta}_percent.taking* x_1$  + $\widehat{\beta}_percent.no.hs* x_2$ 
+
+*It appears that forward selection using the AIC/BIC also reveal that the optimal model is still m4 with sat.both regressed on variables percent.taking and percent.no.hs.*
+$E(sat.both|X_1,X_2)$ = $\beta_0$ + $\widehat{\beta}_{percent.taking} X_1$  + $\widehat{\beta}_{percent.no.hs} X_2$ 
 
 (@) Assess whether your model is doing a good job of modeling the response (hint: think $Y$ vs. $\hat{Y}$  plot).
 ```{r}
 best.model = lm(sat.both ~ percent.taking + percent.no.hs, data = educ.subset)
 plot(best.model$fitted.values ~ educ.subset$sat.both,ylim=c(800,1300), xlim=c(800,1300))
 ```
+
 *It appears to have a discernible positive linear relationship, but I detect a slight curvilinear trend between the outcome, sat.both, and these explanatory variables (percent.taking + percent.no.hs) included in the model.*
 
 (@) Assess the relationship between each each predictor and the response (hint: marginal model plots). Is your model well-specified?
 ```{r}
-install.packages("car", repos="http://R-Forge.R-project.org")
+#install.packages("car", repos="http://R-Forge.R-project.org")
 library(car)
 mmp(best.model, educ.subset$percent.taking)
 ```
+
 *Our best model fits percent.taking as a linear variable.  It appears that our "best"" model is not well-specified considering the percent.taking variable; a curvilinear relationship exists between this variable and sat.both.*
 
+```{r}
+#now let's look at percent.no.hs...
+mmp(best.model, educ.subset$percent.no.hs)
+```
+
+*Compared to percent.taking, this model looks like it fits what we see in the data; the data line and the model line are more closely symmetrical.*
+
 (@) Assess how much a given predictor $x_i$ can explain the response after the other predictors have been taken into account.
+```{r}
+avPlots(best.model)
+```
+
+*Holding all other variables constant, the percent.taking variable (even though it is poorly defined as a  linear variable in this model) explains much of the variation in the outcome variable, sat.both.  Holding all other variables constant, a strong negative linear trend is still apparent after the sat.both is regressed on the percent.no.hs. variable.  Both of these variables make a significant predictive contribution.*
 
 (@) Recommend a final model and provide your reasoning.
 
-(@) Provide an interpretation (using sentences as you might in an academic journal) of your coefficient results.
+*The m4 model $E(sat.both|X_1,X_2)$ = $\beta_0$ + $\widehat{\beta}_{percent.taking} X_1$  + $\widehat{\beta}_{percent.no.hs} X_2$  is the most logical model to go with considering that it passed all three fitting strategies (Stepwise,Forward/Backward AIC & BIC).*
 
+*It this data set, we only have four variables to work with (population, percent.taking, percent.no.hs, & teacher.pay); I don't see the connection between population and sat.both.  Reformers discuss teacher pay as having a direct effect on the test scores of students, but it is established knowledge that SAT scores are more correlated with a student's socioeconomic status (SES) than with teacher pay.*
+
+*That being said, percent.taking (higher percentages of students taking the SAT indicate pockets of higher SES because low-income students refrain due to financial constraints) and percent.no.hs are rough measures of SES, but they are better than nothing and allow us to incorporate SES as an explanatory  variable into our model.  In short, our model's construction makes sense and is supported in the literature.*  
+
+(@) Provide an interpretation (using sentences as you might in an academic journal) of your coefficient results.
+```{r}
+summary(best.model)
+```
+
+*The association between the percentage of students in each state who take the SAT and the average SAT score is negative and statistically significant at 0.001 significance. For every one percentage point increase in the number of students taking the SAT, the average score is predicted to decrease by 2.34 points.*
+
+*The predicted association between the percentage of state residents without a high school degree and the state average SAT score is also negative and statistically significant at the 0.01 level. For every one percentage point increase in a state's percentage of residents without a high school diploma, our model predicts a 2.54 point decrease in average score.*
 
 ### Problem 4.
 
@@ -225,11 +269,26 @@ Examine Angell’s data on the moral integration of U.S. cities (Angells is a da
 ```{r message=FALSE,warnings=FALSE}
 library(car)
 data("Angell")
+head(Angell)
 ```
 
-(@) Regress moral integration on heterogeneity and geographic mobility for the cities in dataset (multiple regression). 
+(@) Regress moral integration on heterogeneity and geographic mobility for the cities in data set (multiple regression). 
+```{r}
+model_1 = lm(moral ~ hetero + mobility, data = Angell)
+summary(model_1)
+```
 
-(@) Report the finding of the results. Be sure to use a table to report $\beta_0$, $\beta_1$, and $\beta_2$ and statistics that allow for significance tests to be performed on these three coefficients. Write a paragraph to substantively explain the results of the model. 
+(@) Report the finding of the results. Be sure to use a table to report $\beta_0$, $\beta_1$, and $\beta_2$ and statistics that allow for significance tests to be performed on these three coefficients. Write a paragraph to substantively explain the results of the model.
+```{r}
+#install.packages("texreg", repos="http://R-Forge.R-project.org")
+library(texreg)
+screenreg(model_1)
+avPlots(model_1)
+```
+
+*The results of this model indicate that both heterogeneity and mobility are negatively related to moral integration in cities.* 
+
+*Both independent variables are found to have statistically significant (at the 0.001 level), negative assocations with moral integration. For every one-unit increase in heterogeneity moral integration is predicted to be reduced moral by 0.11 units. For every one-unit increase in mobility moral integration is predicted to be reduced moral by 0.19 units.*
 
 ### Report your process
 
