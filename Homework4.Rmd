@@ -1,6 +1,6 @@
 
 ---
-title: "PADP8120_Homework4"
+title: "Coxon_PADP8120_Homework4"
 author: "Fall 2015"
 date: "![Creative Commons Attribution License](images/cc-by.png)"
 output:
@@ -31,6 +31,12 @@ Topics covered in this homework include:
 
 Write a function that emulates the `lm` function in R for a simple (bivariate) regression. Like the `lm` function, your function should be able to estimate and report to the screen `B_k` coefficients, standard errors for these coefficients, and corresponding t-values and p-values. It should also report the residual standard error and $R^2$. Be sure to show your code. Compare your results to the results of the `lm` function on some data of your choosing to verify that things are working correctly. 
 
+E(Y|x) = $\beta_0 + \beta_1$*x_i    
+$\beta_1$ = $\sum_{i=1}^n$ $(x_i - \bar{x})$*$(y_i - \bar{y})$ / $(x_i - \bar{x})^2$
+$\beta_0$ = $\bar{y}$ - $\beta_1$*$x_i$
+```{r}
+
+```
 ### Problem 2. 
 
 Imagine that you've been urged by the teachers' union to show that higher teacher pay leads to better education outcomes.  Of course, you don't do advocacy research --- you are a seeker of truth --- but you decide to investigate this questions scientifically using data about SAT scores and other educational indicators at the state level.  For now we can pretend that this is the only available data (it comes from John Fox's website). [Read the data documentation](http://socserv.socsci.mcmaster.ca/jfox/Books/Applied-Regression-2E/datasets/States.pdf) and use the code below to load it
