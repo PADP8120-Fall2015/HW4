@@ -1,7 +1,7 @@
 
 ---
-title: "Coxon_PADP8120_Homework4"
-author: "Fall 2015"
+title: "PADP8120_Homework4"
+author: "Victoria Coxon - Fall 2015"
 date: "![Creative Commons Attribution License](images/cc-by.png)"
 output:
   html_document:
@@ -35,6 +35,7 @@ Write a function that emulates the `lm` function in R for a simple (bivariate) r
 $E(Y|x)$ = $\beta_0 + \beta_1$*x_i    
 
 $\beta_1$ = $\sum_{i=1}^n$ $(x_i - \bar{x})$*$(y_i - \bar{y})$ / $(x_i - \bar{x})^2$
+
 $\beta_0$ = $\bar{y}$ - $\beta_1$*$x_i$
 
 Best estimate of $\sigma^2$ is 
