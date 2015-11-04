@@ -1,0 +1,299 @@
+
+---
+title: "PADP8120 Homework 4"
+author: "Thomas K. Valentine"
+date: "November 4, 2015"
+output:
+  html_document:
+    highlight: tango 
+    theme: united
+    
+widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
+---
+
+## Problem 1 
+
+####Imagine that you've been urged by the teachers' union to show that higher teacher pay leads to better education outcomes.  Of course, you don't do advocacy research --- you are a seeker of truth --- but you decide to investigate this questions scientifically using data about SAT scores and other educational indicators at the state level.  For now we can pretend that this is the only available data (it comes from John Fox's website). [Read the data documentation](http://socserv.socsci.mcmaster.ca/jfox/Books/Applied-Regression-2E/datasets/States.pdf) and use the code below to load it
+
+```{r echo=TRUE,message=FALSE,warnings=FALSE}
+#Step One: Import Data / Convert .txt file to a working data set
+library(dplyr)
+setwd("/Users/Tommy/SkyDrive/Google Drive/PADP 8120 Practice/HW4")
+educ <- read.table("input/States.txt", header=TRUE)
+
+#Step Two: Cleaning. We use periods to seperate words in the variable, allowing for easier reading and interpretation
+educ <- educ %>% rename(sat.verbal = satVerbal, sat.math = satMath, percent.taking = percentTaking, percent.no.hs = percentNoHS, teacher.pay = teacherPay) 
+
+#Step Three: Eliminate state as a rowname
+educ$state <- rownames(educ)
+rownames(educ) <- NULL
+educ <- tbl_df(educ)
+```
+
+###(a) Make a scatter plot showing the relationship between average teacher pay and average sat score (combined verbal and math) at the state level.  To do this you might have to create a new variable.  And, overlay a regression line on the plot.
+
+```{r message = FALSE}
+library(ggplot2)
+#First, we create a new variable that combines sat.math with sat.verbal
+educ$sat.combined <- educ$sat.math+ + educ$sat.verbal
+
+#Next, we create the plot, including aesthetic changes to make publishable.
+ggplot(educ,aes(x=teacher.pay,y=sat.combined)) + geom_point() +
+  geom_smooth(method=lm) + theme_gray() + 
+  scale_x_continuous(expand=c(0,0)) + ggtitle("Fig. 1: Teacher Pay and Average Sat Score") + xlab("Teacher Pay") + ylab("Combined SAT scores")
+```
+
+###(b) Fit a simple regression model to predict total SAT score based on teacher pay.
+
+```{r}
+#We use the combined variable (that I created earlier) and teacher.pay to fit the regression model.
+mod = lm(sat.combined~teacher.pay,data=educ)
+summary(mod)
+```
+
+###(c) Does Y appear to be a linear function of X?
+
+Judging from Figure 1 (the plot we made in 1a), it does appear that Y is a linear function of X. We can do so mainly by process of elimination. There is not a clear trend of the data points following the regression line, but there is also no evidence (curvilinear trend, etc.). 
+
+###(d) Check whether the variance of Y|X is the same for any X.
+
+```{r}
+plot(mod$residuals~predict(mod), main="Fig. 2: Test for Heteroskedasticity",  xlab="Predicted Values(mod)", ylab="Residuals(mod)")
+```
+
+The variance for Y|X does not seem to be the same for any x. As the predicted value increases, we see an increase in the variance, especially around thhe 1080 value mark. 
+
+###(e) Check whether the errors (and thus the Y|X) are independent of one another).
+
+To check this assumption, we need to plot residuals against the regressor. It's probably a good idea to use standardized residuals. 
+```{r}
+plot(rstandard(mod)~educ$teacher.pay,ylim=c(-2.5,2.5), main="Fig. 3: Check for Error Independence", xlab="Teacher Pay", ylab="RStandard(mod)")
+abline(h=0)
+```
+
+####Four notes:
+1. All residual values for teacher pay below the 30 threshold are positive.
+2. Aside from that, error terms seem largely randomly distributed
+3. There also seems to be some type of heavier distribution of error between the 30-35 threshold, although not in so distinct a pattern that it should be cause for concern.
+4. Conclusion: With those notes made, the results of this test seem to be favorable and we should be able to move on without serious reservations.
+
+###(f) Check whether the errors are normally distributed with mean zero.
+
+```{r}
+hist(mod$residuals, main="Fig. 4: Histogram of Residuals", xlab="Residuals", col = "blue1")
+```
+
+If we were to overlay a normal curve with mean zero onto this histogram, we would find that the residuals have a not perfectly symmetrical but fairly normal error distribution.
+
+###(g) Identify any outliers and quantify their influence and leverage. 
+
+```{r}
+#First, we can plot Teacher Pay against RStandard to evaluate outliers
+plot(rstandard(mod)~educ$teacher.pay,ylim=c(-2.5,2.5), main="Fig. 5: Outliers", xlab="Teacher Pay", ylab="RStandard(mod)")
+abline(h=0)
+abline(h=2,lty=2)
+abline(h=-2,lty=2)
+```
+
+Our standardized residual does not reveal any important outliers, with the general trend of all but one point falling within the expected range from 0. Because no outliers are identified, we are unlikely to observe influence or leverage.
+
+```{r}
+#Next, we can use Cook's Distance to evaluate any leverage issues.
+summary(round(cooks.distance(mod),2))
+```
+
+As we indicated above, we did not find any high leverage values.
+
+###(h) Explain the substantive conclusion that you would draw from the scatter plot and regression analysis. Be sure to interpret the coefficient in a complete sentence. 
+
+```{r}
+summary(mod)
+```
+
+Suprisingly (when weighed against my initial expectations), for every $1.2k increase in teacher pay, we can predict a -4.8 reduction in average combined SAT score.
+
+## Problem 2
+
+###You don't necessarily believe these results, and think there might be more to the story. Thus, you decide to carry on to a multiple regression analysis using more variables.
+
+###(a) Using a figure or table, examine the pairwise correlations amongst potential model variables (go ahead and exclude the categorical indicators `state` and `region`. Comment on these results and how they will affect your model fitting. 
+
+We see strong negative relationships between the SAT scores and percent taking the test. This may be indicative of conclusions that we can make. It also indicates that, when selecting a model, that we should consider that relationship if possible.
+
+
+```{r message = FALSE}
+library(knitr);library(dplyr)
+kable(round(cor(educ %>% select(-state,-region)),2))
+```
+
+###(b) Identify the optimal model(s) using all possible subsets and AIC/BIC.
+
+####In any given equation, number of combinations is $n! / [k!(n-k)!]$. Given this, we can conclude:
+1. Our data set has 4 different IV's, 
+2. Our professor wants us to stretch away from "boring"bivariate regression
+3. There are `r factorial(4) / (factorial(2) * factorial(4-2))` 2-variable models, `r factorial(4) / (factorial(3) * factorial(4-3))` 3-variable models, and 1 4-variable mode.
+
+```{r}
+educ.sub = educ %>% dplyr::select(-state,-region,-sat.math,-sat.verbal)
+mod.list = list(m1 = lm(sat.combined ~ population + percent.taking,data=educ.sub),
+m2 = lm(sat.combined ~ population + percent.no.hs,data=educ.sub),
+m3 = lm(sat.combined ~ population + teacher.pay,data=educ.sub),
+m4 = lm(sat.combined ~ percent.taking + percent.no.hs,data=educ.sub),
+m5 = lm(sat.combined ~ percent.taking + teacher.pay,data=educ.sub),
+m6 = lm(sat.combined ~ percent.no.hs + teacher.pay,data=educ.sub),
+m7 = lm(sat.combined ~ population + percent.taking + percent.no.hs,data=educ.sub),
+m8 = lm(sat.combined ~ population + percent.taking + teacher.pay,data=educ.sub),
+m9 = lm(sat.combined ~ population + percent.no.hs + teacher.pay,data=educ.sub),
+m10 = lm(sat.combined ~ percent.taking + percent.no.hs + teacher.pay,data=educ.sub),
+m11 = lm(sat.combined ~ population + percent.taking + percent.no.hs + teacher.pay,data=educ.sub))
+
+mod.comps = data.frame(AIC = unlist(lapply(mod.list,AIC)),BIC = unlist(lapply(mod.list,BIC)),df = unlist(lapply(lapply(mod.list,coef),length))-1)
+mod.comps
+```
+
+The lowest AIC produce is 496.1004, for model 4. Models 7, 10, and 11 have similar results, but all have higher degrees of freedom (3, 3, and 4, respectively). That means model 4 has the lowest AIC and the lowest number of parameters. Model 4 is the best choice.
+
+###(c) Identify the optimal model(s) using backward elimination and AIC/BIC.
+
+```{r}
+summary(lm.unrestricted <- lm(sat.combined ~ ., data = educ.sub))
+#Step One: Backward Elimination + AIC
+backAIC <- step(lm.unrestricted,direction = 'backward',k = 2)
+#Step One: Backward Elimination + BIC
+backBIC <- step(lm.unrestricted,direction = 'backward',k = log(nrow(educ.sub)))
+```
+
+After running both approaches, we see results that range from exactly the same (42811 355.16/ 42811 355.16) to extremely similar (percent.no.hs is 362.80/361.87). Both approaches are the same. Optimal mode is the same in either event.
+
+###(d) Identify the optimal model(s) using forward selection and AIC/BIC.
+
+```{r}
+summary(lm.unrestricted <- lm(sat.combined ~ ., data = educ.sub))
+summary(lm.restricted <- lm(sat.combined ~1,data = educ.sub))
+ step(lm.restricted, scope=list(lower=lm.restricted, upper=lm.unrestricted), direction="forward",k=2)
+
+  step(lm.restricted, scope=list(lower=lm.restricted, upper=lm.unrestricted), direction="forward",k=log(nrow(educ.sub)))
+```
+
+Our results indicate that sat.combined ~ percent.taking + percent.no.hs should be our preferred model.
+
+###(e) Do the methods agree on the optimal model?  If not, why not?
+
+Yes. All methods indicate the optimal model is as follows: $sat.combined ~ percent.taking + percent.no.hs$
+
+###(f) Assess whether your model is doing a good job of modeling the response (hint: think $Y$ vs. $\hat{Y}$  plot).
+
+```{r}
+mod.best = lm(sat.combined ~ percent.taking + percent.no.hs,data=educ.sub)  
+plot(mod.best$fitted.values ~ educ.sub$sat.combined,ylim=c(900,1200),xlim=c(900,1200), main="Fig. 6: Y vs Yhat")
+```
+
+Looking at the resulting cluster, it appears that there is a linear relationship between Y and Y hat (predicted Y), with what looks to be a positive trend emerging as points trend from the 950 combined Sat Values up through the 1200 values. It is also possible that the trend could prove to be curvilinear, as we see some evidence that the direction of the relationship is actually curved. Regardless of this possibility, the appearance of this chart does seem to confirm that our model is doing a good job.
+
+###(g) Assess the relationship between each each predictor and the response (hint: marginal model plots). Is your model well-specified?
+
+```{r}
+library(car)
+mmp(mod.best, educ.sub$percent.taking, main="Fig. 7: MMP: Percent Taking SAT")
+```
+
+Despite our favorable rearlier results, this plot now raises some doubt. Although the data points seems to correspond with a linear variable, we can look at the smoothed trendline (blue) and see the type of relationship we mentioned above: curvilinear. We see how the smoothed line has a clear curve between the 40 and 60 markers. This all indicates that the model isn't properly specified with the percent.taking variable.
+
+```{r}
+mmp(mod.best, educ.sub$percent.no.hs, main="Fig. 8: MMP: Percent No High School")
+```
+
+This model shows a good sense of agreement between the model and the smoothed trendline.
+
+###(h) Assess how much a given predictor $x_i$ can explain the response after the other predictors have been taken into account.
+
+```{r}
+avPlots(mod.best)
+```
+
+
+The strong linear trends that appear in both plots suggest that each predictor's contribution is critical. That trend, between the IV and DV, is maintained after the addition of the second IV. 
+
+###(i) Recommend a final model and provide your reasoning.
+
+Normally, we would use process of elimination here, failing to consider any models that demonstrated fatal flaws, however no such flaws emerged. Therefore, we can look at the four variables and use logic and some degree of face validity to select our model. While no measure would be perfect, we can recognize the imporance of percent.taking (imagine an environment where lower-performing students, perhaps not having hope for college, opted out of the test; clearly that would mean only higher-performing students would take the test, skewing results) and we can control for SES with the only tangentally related variable, no.hs. 
+
+###(j) Provide an interpretation (using sentences as you might in an academic journal) of your coefficient results.
+
+```{r}
+summary(mod.best)
+```
+
+There is a negative, statistically signficant (.001) relationship between the percent of students taking the SAT and average combined SAT performance. For every one percentage point increase in students attempting the SAT, we can expect the combined SAT test score to decrease by 2.34. Meanwhile, there is also a negative, statistically signficant (.01) relationship between the percent of students without a high school diploma and average combined SAT performance. For every percentage point increase in students without a HS diploma, we can predict a 2.54 decrease in average score.
+
+While it could be a coincidence, it seems wortwhile to point out that the combined total of these predictive values is 4.8, the same value that Problem 1 indicated existed between SAT scores and teacher pay, which is also the same conclusion that caused our doubt and encouraged us to take these extra steps.
+
+## Problem 3
+
+###Examine Angell’s data on the moral integration of U.S. cities (Angells is a data file in the car library). 
+
+```{r message=FALSE,warnings=FALSE}
+library(car)
+data("Angell")
+```
+
+###(a) Regress moral integration on heterogeneity and geographic mobility for the cities in dataset (multiple regression). 
+
+```{r}
+mod1 = lm(moral~hetero+mobility,data = Angell)
+```
+
+###(b) Report the finding of the results. Be sure to use a table to report $\beta_0$, $\beta_1$, and $\beta_2$ and statistics that allow for significance tests to be performed on these three coefficients. Write a paragraph to substantively explain the results of the model. 
+
+```{r message =FALSE}
+library(texreg)
+screenreg(mod1)
+```
+
+This model reveals a negative and statistically significant relationship between  / (-.19) mobility and moral integration in cities.
+
+This model reveals a negative and statistically signficant relationship between moral integration and the two IV's: heterogeneity (-.11) and mobility (-.19). 
+For every one-unit increase in hetero., we therefore predict moral integration to be reduced by .11 units. A one unit-increase in mobility would be expected to cause a .19 unit decrease in moral integration.
+
+
+```{r}
+avPlots(mod1)
+```
+
+As ocurred earlier, the strong linear trends that appear in both plots suggest that each predictor's contribution is critical. That trend, between the IV and DV, is maintained after the addition of the second IV. 
+
+```{r}
+plot(mod1$residuals~mod1$fitted.values)
+abline(h=0)
+```
+
+The error terms seem largely randomly distributed, with no strong areas of concern.
+
+### Report your process
+
+You're encouraged to reflect on what was hard/easy, problems you solved, helpful tutorials you read, etc. Give credit to your sources, whether it's a blog post, a fellow student, an online tutorial, etc.
+
+####Here were my steps this week:
+1. Project Set-Up: Fork/Clone Repository; Start project in RStudio; Set Up Template, using Assignment Rmd File / Key / Past Midterm / Past Homeworks to remind me how everything should be laid out.
+2. First Attempt to Knit (I always do a Knit attempt before proceeding with work): I noticed that I was having two errors, both related to importing. I was able to solve one by installing the cars package, but the data link for the first problem would not work. I attempt to locate that data by reviewing the class website and Tyler's professional website. I also double checked my google drive to see if there was a file prefix. Finally, I called Jon Parisi, who explained that he had a similar problem and that I needed to point the command to a local location on my own drive. Solved.
+3. Knit was successful. Proceeded with working through the project itself. I originally intended to work through this project blind, but instead opted for a combination of reviewing OpenStatistics, the Labs, the Key, and online resources (especially http://rmarkdown.rstudio.com/). This was a very, very challenging lab for me. I'll admit that I relied on the key to point me in the right direction more often than I would have liked, although I was careful not to simply mindlessly copy. For each line completed, I used the ? key and my other resources to feel confident that a) I knew what was happening and b) that I would know enough to use that command on future assignments/projects/midterms.
+4. In comparing my work to the key, I noted that in problem one, I created the variable at an earlier step than the key demonstrates. However, I would like to know if, in doing so, I adversely impacted my data. My concern comes from the method I used to create the variable as opposed to the "mutate" command from dplyr that was used in the example.
+5. For the most part, the process went smoothly. The most difficult part of the process was (especially after my mid-term) wanting to dissect every part of the process so that I would feel that I could intuitively know to repeat this process in the future.
+6. Ultimately, despite an earnest attempt, I decided not to pursue the bonus. As much as I need the additional points, I was unable to produce a satisfactory result without aping your work to a plaigaristic level. 
+7. On the good side of things: I do feel that I learned a great deal in the close to 5 hours that I spent on this assignment!
+
+### Rubric
+
+Minus: Didn't tackle at least 3 tasks. Didn't interpret anything but left it all to the "reader". Or more than one technical problem that is relatively easy to fix. It's hard to find the report in our repo.
+
+Check: Completed, but not fully accurate and/or readable. Requires a bit of detective work on my part to see what you did
+
+Check plus: Hits all the elements. No obvious mistakes. Pleasant to read. No heroic detective work required. Solid.
+
+
+
+#### The command below is helpful for debugging, please don't change it
+
+```{r echo=FALSE}
+sessionInfo()
+```
