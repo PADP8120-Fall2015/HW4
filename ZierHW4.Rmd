@@ -1,0 +1,205 @@
+---
+title: "ZierHW4"
+author: "Emily Zier"
+date: "November 1, 2015"
+output: html_document
+---
+
+```{r echo=TRUE,message=FALSE,warnings=FALSE}
+
+library(dplyr)
+setwd("/Users/EmilyZier/Dropbox/Personal Computer/8120/Homeworks/HW4")
+educ <- read.table("input/States.txt", header=TRUE)
+educ <- educ %>% rename(sat.verbal = satVerbal, sat.math = satMath, percent.taking = percentTaking, percent.no.hs = percentNoHS, teacher.pay = teacherPay) 
+educ$state <- rownames(educ)
+rownames(educ) <- NULL
+educ <- tbl_df(educ)
+```
+
+Question 1.
+
+```{r}
+library(ggplot2)
+ggplot(educ,aes(x=teacher.pay,y=sat.math+sat.verbal)) + geom_point() +
+  geom_smooth(method=lm) + theme_bw() + scale_x_continuous(expand=c(0,0))
+```
+
+Question 2. 
+
+```{r}
+educ = educ %>% mutate(sat.mathandverbal = sat.math+sat.verbal)
+model1 = lm(sat.mathandverbal~teacher.pay, data=educ)
+summary(model1)
+```
+
+Question 3. 
+
+Because there's a straight line in the scatterplot above that does not curve we can assume there is a linear relationship - although I don't think it is very strong. 
+
+Question 4. 
+```{r}
+plot(model1$residuals~predict(model1))
+```
+This plot shows that the variance in the errors is NOT constant, but rather gets bigger as our x increases. This is a sign of heteroskedasticity. 
+
+Question 5. 
+```{r}
+plot(rstandard(model1)~educ$teacher.pay,ylim=c(-2,2))
+abline(h=0)
+```
+This shows our errors plotted around a regressor at 0. It is strange that there are no negative errors before teacher pay is at 30,000 dollars. But otherwise, the errors seem to be pretty even on the top and the bottom of the line from there on after. 
+
+Question 6. 
+```{r}
+hist(model1$residuals)
+```
+This looks like a pretty normal curve to me! 
+
+Question 7. 
+```{r}
+plot(rstandard(model1)~educ$teacher.pay, ylim=c(-2.5,2.5))
+abline(h=0)
+abline(h=2, lty=2)
+abline(h=-2, lty=2)
+#There aren't any really huge outliers in residuals, there is only one that actually goes past -2. 
+summary(round(cooks.distance(model1),2))
+```
+This table shows very small leverage in our outliers. 
+
+Question 8. 
+```{r}
+summary(model1)
+```
+This table shows us that when you increase teacher pay by one unit, or one thousand dollars, the average combined math and verbal SAT score drops by 4.8 points. Which, to me, is strange. 
+
+
+Problem 2
+
+Question 9. 
+```{r}
+library(knitr)
+library(dplyr)
+kable(round(cor(educ %>% select(-state,-region)),2))
+```
+This table shows that the percent of high school seniors taking the SAT is pretty strongly, negatively correlated with both SAT verbal and math scores. 
+
+Question 10. 
+```{r}
+educ.sub = educ %>% dplyr::select(-state,-region,-sat.math,-sat.verbal)
+mod.list = list(m1 = lm(sat.mathandverbal ~ population + percent.taking,data=educ.sub),
+m2 = lm(sat.mathandverbal ~ population + percent.no.hs,data=educ.sub),
+m3 = lm(sat.mathandverbal ~ population + teacher.pay,data=educ.sub),
+m4 = lm(sat.mathandverbal ~ percent.taking + percent.no.hs,data=educ.sub),
+m5 = lm(sat.mathandverbal ~ percent.taking + teacher.pay,data=educ.sub),
+m6 = lm(sat.mathandverbal ~ percent.no.hs + teacher.pay,data=educ.sub),
+m7 = lm(sat.mathandverbal ~ population + percent.taking + percent.no.hs,data=educ.sub),
+m8 = lm(sat.mathandverbal ~ population + percent.taking + teacher.pay,data=educ.sub),
+m9 = lm(sat.mathandverbal ~ population + percent.no.hs + teacher.pay,data=educ.sub),
+m10 = lm(sat.mathandverbal ~ percent.taking + percent.no.hs + teacher.pay,data=educ.sub),
+m11 = lm(sat.mathandverbal ~ population + percent.taking + percent.no.hs + teacher.pay,data=educ.sub))
+
+mod.comps = data.frame(AIC = unlist(lapply(mod.list,AIC)),BIC = unlist(lapply(mod.list,BIC)),df = unlist(lapply(lapply(mod.list,coef),length))-1)
+mod.comps
+```
+Model 4 has the lowest AIC, but model 7 is very close. However, model 4 is more simple than model seven because it only includes two parameters. So 4 is best. 
+
+Question 11. 
+```{r}
+summary(lm.unrestricted <- lm(sat.mathandverbal ~ ., data = educ.sub))
+backAIC <- step(lm.unrestricted,direction = 'backward', k=2)
+backBIC <- step(lm.unrestricted,direction = 'backward',k= log(nrow(educ.sub)))
+```
+It is the same when you use AIC or BIC. 
+
+Question 12. 
+```{r}
+summary(lm.unrestricted <- lm(sat.mathandverbal ~ ., data = educ.sub))
+summary(lm.unrestricted <- lm(sat.mathandverbal ~1,data = educ.sub))
+
+step(lm.restricted, scope=list(lower=lm.restricted, upper=lm.unrestricted), direction="forward", k=2)
+
+step(lm.restricted, scope=list(lower=lm.restricted, upper=lm.unrestricted), direction="forward", k=log(nrow(educ.sub)))
+
+```
+
+Question 13. 
+They all agree on the model sat.mathandverbal~percent.taking + percent.no.hs
+
+Question 14. 
+```{r}
+mod.best = lm(sat.mathandverbal ~ percent.taking + percent.no.hs,data=educ.sub)  
+plot(mod.best$fitted.values ~ educ.sub$sat.mathandverbal,ylim=c(900,1200),xlim=c(900,1200))
+```
+I'm not sure if it is doing the best job because I feel like the relationship may be slightly curved. 
+
+Question 15.
+```{r}
+library(car)
+mmp(mod.best, educ.sub$percent.taking)
+#The blue, solid line is curved, and that line represents the actual data. This does not represent a linear relationship, as this line has a pretty definitive curve while the red line representing the model stays straight. 
+mmp(mod.best, educ.sub$percent.no.hs)
+#these two lines move pretty well together, so this is a good model. 
+```
+
+Question 16. 
+```{r}
+avPlots(mod.best)
+```
+These plots show that there is a strong linear relationship between x and y, even when another independent variable is added. 
+
+Question 17.
+Model 4 seems to make sense because it was consistent throughout and it has the  variables we care the most about because they are the most relevant to our question: whether or not a student graduated and percentage of students taking the exam.
+
+Question 18. 
+```{r}
+summary(mod.best)
+```
+We can say with 99.9% confidence that there is a negative correlation between percentage of students who take the SAT and the average SAT score. For every one percent increase in amount of students taking the exam the average score will drop by 2.34 points. Furthermore, we can say with 99% confidence that there is a negative correlation between percentage of students without a high school diploma and the average SAT scores in the  state. When the percentage of students without a high school diploma increases by one there is a 2.54 decrease in the average SAT score. 
+
+Problem 3
+library(car)
+data("Angell")
+
+Question 19
+```{r}
+modl = lm(moral~hetero+mobility,data = Angell)
+```
+
+Question 20.
+```{r}
+library(texreg)
+screenreg(modl)
+#Heterogeneity and mobility are both negatively realted to moral integration. If you increase heterogeneity by one unit than moral integration wil decrease by 0.11 unitls. Increasing mobility by one unit results in a reduction of moral integration by 0.19 units. These relationships are statistically significant at the critical value of .001 
+avPlots(modl)
+plot(modl$residuals~modl$fitted.values)
+```
+BONUS
+I legitimately have no idea how to do this. I looked at your example in the key, though. Still a bit confused and not going to pretend I thought of any of that on my own for credit. Maybe we can go over it in class?
+
+
+
+R version 3.2.2 (2015-08-14)
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
+Running under: OS X 10.11 (El Capitan)
+ 
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+ 
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+ 
+other attached packages:
+[1] car_2.1-0   dplyr_0.4.3
+
+loaded via a namespace (and not attached):
+[1] Rcpp_0.12.1        knitr_1.11         magrittr_1.5      
+[4] splines_3.2.2      MASS_7.3-44        lattice_0.20-33   
+[7] R6_2.1.1           minqa_1.2.4        stringr_1.0.0     
+[10] tools_3.2.2        nnet_7.3-11        parallel_3.2.2    
+[13] pbkrtest_0.4-2     grid_3.2.2         nlme_3.1-122      
+[16] mgcv_1.8-7         quantreg_5.19      DBI_0.3.1         
+[19] MatrixModels_0.4-1 htmltools_0.2.6    yaml_2.1.13       
+[22] lme4_1.1-9         lazyeval_0.1.10    assertthat_0.1    
+[25] digest_0.6.8       Matrix_1.2-2       nloptr_1.0.4      
+[28] formatR_1.2.1      evaluate_0.8       rmarkdown_0.8     
+[31] stringi_0.5-5      SparseM_1.7
