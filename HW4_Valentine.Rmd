@@ -110,7 +110,7 @@ As we indicated above, we did not find any high leverage values.
 summary(mod)
 ```
 
-Suprisingly (when weighed against my initial expectations), for every $1.2k increase in teacher pay, we can predict a -4.8 reduction in average combined SAT score.
+Surprisingly (when weighed against my initial expectations), for every $1.2k increase in teacher pay, we can predict a -4.8 reduction in average combined SAT score.
 
 ## Problem 2
 
